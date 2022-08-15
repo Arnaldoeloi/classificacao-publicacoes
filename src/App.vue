@@ -2,22 +2,31 @@
   <h2>Classificador de Publicações</h2>
   
   <!-- <form :action="url+'api/types'" method="post" @submit.prevent="createTypeHandler"> -->
-  <div>
+  <div class="m-1">
     <input type="text" name="name" v-model="publishTypeNameTemp" placeholder="Tipo de publicação">
     <button @click="createType" >Criar tipo</button>
   </div>
   <!-- </form> -->
 
   <PublishViewer v-if="publish" :publish="publish"/> 
-  <div v-if="publish">
+  <div class="m-1" v-if="publish">
     <select v-model="selectedType_id">
       <option disabled value="">Selecione um tipo para classificar</option>
       <option v-for="type in types" :key="type.id" :value="type.id">{{ type.name }}</option>
     </select>
     <button @click="classifySelectedPublish">Classificar</button>
   </div>
-  <button @click="fetchRandomPublish(false)">Trazer publicação aleatória</button>
-  <button @click="fetchRandomPublish(true)">Trazer publicação expediente</button>
+
+  <div class="m-1">
+    <button @click="fetchRandomPublish(false)">Trazer publicação aleatória</button>
+    <button @click="fetchRandomPublish(true)">Trazer publicação expediente</button>
+  </div> 
+
+  <div class="m-1">
+    <span>Data inicial:</span><input type="text" v-model="datainicial" placeholder="dd/mm/aaaa"><br>
+    <span>Data final:</span><input type="text" v-model="datafinal" placeholder="dd/mm/aaaa"><br>
+    <button @click="fetchFromProcessoAgil">Popular banco de dados</button>
+  </div>
 
 
 </template>
@@ -39,6 +48,8 @@ export default {
       publishTypeNameTemp: null,
       publish: null,
       types: null,
+      datainicial: null,
+      datafinal: null,
     }
   },
   created() {
@@ -46,6 +57,26 @@ export default {
     this.fetchTypes();
   },
   methods: {
+    fetchFromProcessoAgil: function(){
+      if(!this.datainicial || !this.datafinal){
+        useToast().error('Você precisa definir uma data inicial e uma final. O formato deve ser dd/mm/aaaa');
+        return;
+      }
+        useToast().info('Fazendo consulta ao processo ágil. Isso pode demorar um pouco.');
+      axios.get(this.url+"api/publishes/refetch",
+        {params:
+          { 
+            datainicial:this.datainicial,
+            datafinal:this.datafinal,
+          }
+        }
+      ).then(()=>{
+        useToast().success('Banco populado com novos dados da Processo Agil');
+      }).catch((err)=>{
+        console.log(err);
+        useToast().error('Houve algum problema. Provavelmente a formatação das datas está incorreta. O range máximo é de 5 dias');
+      })
+    },
     classifySelectedPublish: function(){
       if(!this.publish)return;
 
@@ -98,6 +129,9 @@ export default {
 </script>
 
 <style>
+.m-1{
+  margin: 1rem;
+}
 #app {
   display: flex;
   flex-direction: column;
